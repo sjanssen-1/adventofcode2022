@@ -6,50 +6,47 @@ use std::collections::HashMap;
 use std::iter::{Iterator};
 use lazy_static::lazy_static;
 
-lazy_static! {
-    static ref USAGE_SCORE_PART1: HashMap<&'static str, i32> = {
-        let mut m = HashMap::new();
-        m.insert("X", 1);
-        m.insert("Y", 2);
-        m.insert("Z", 3);
-        m
-    };
-}
-
-lazy_static! {
-    static ref GAME_SCORE_PART1: HashMap<&'static str, i32> = {
-        let mut m = HashMap::new();
-        m.insert("A X", 3);
-        m.insert("B Y", 3);
-        m.insert("C Z", 3);
-        m.insert("A Y", 6);
-        m.insert("B Z", 6);
-        m.insert("C X", 6);
-        m
-    };
-}
-
-lazy_static! {
-    static ref GAME_SCORE_PART2: HashMap<&'static str, i32> = {
-        let mut m = HashMap::new();
-        m.insert("X", 0);
-        m.insert("Y", 3);
-        m.insert("Z", 6);
-        m
-    };
-}
-
-lazy_static! {
-    static ref USAGE_SCORE_PART2: HashMap<&'static str, i32> = {
-        let mut m = HashMap::new();
-        m.insert("A", 1);
-        m.insert("B", 2);
-        m.insert("C", 3);
-        m
-    };
-}
-
 const FILE_PATH: &str = "src/input.txt";
+
+const LOSE_POINTS: i32 = 0;
+const DRAW_POINTS: i32 = 3;
+const WIN_POINTS: i32 = 6;
+
+const MOVES: [&str; 3] = ["rock", "paper", "scissors"];
+
+lazy_static! {
+    static ref CONVERSION_MAP: HashMap<&'static str, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert("A", "rock");
+        m.insert("B", "paper");
+        m.insert("C", "scissors");
+        m.insert("X", "rock"); // only part 1
+        m.insert("Y", "paper"); // only part 1
+        m.insert("Z", "scissors"); // only part 1
+        m
+    };
+}
+
+lazy_static! {
+    static ref USAGE_SCORE: HashMap<&'static str, i32> = {
+        let mut m = HashMap::new();
+        m.insert("rock", 1); // using rock grants 1 point
+        m.insert("paper", 2); // using paper grants 2 points
+        m.insert("scissors", 3); // using scissors grants 3 points
+        m
+    };
+}
+
+lazy_static! {
+    static ref GAME_SCORE: HashMap<&'static str, i32> = {
+        let mut m = HashMap::new();
+        m.insert("X", LOSE_POINTS); // lose
+        m.insert("Y", DRAW_POINTS); // draw
+        m.insert("Z", WIN_POINTS); // win
+        m
+    };
+}
+
 
 fn main() -> Result<(), Error> {
     let strategy_guide = read(FILE_PATH)?;
@@ -70,38 +67,53 @@ fn simulate_strategy(strategy_guide: Vec<String>) {
 
 fn calculate_round_part1(round: String) -> i32 {
     let mut round_score = 0;
-    let own_move = round.split(" ").nth(1).unwrap();
 
-    round_score += USAGE_SCORE_PART1.get(own_move).unwrap();
-    round_score += GAME_SCORE_PART1.get(&*round).or(Option::from(&0)).unwrap();
+    let split: Vec<&str> = round.split(" ").collect();
+    let opponent_move = *CONVERSION_MAP.get(split.get(0).unwrap()).unwrap();
+    let own_move = *CONVERSION_MAP.get(split.get(1).unwrap()).unwrap();
+
+    round_score += USAGE_SCORE.get(own_move).unwrap();
+    round_score += determine_round_score_part1(opponent_move, own_move);
 
     return round_score;
 }
 
+fn determine_round_score_part1(opponent_move: &str, own_move: &str) -> i32 {
+    let opponent_move_index = MOVES.iter().position(|&x| x == opponent_move).unwrap();
+    let own_move_index = MOVES.iter().position(|&x| x == own_move).unwrap();
+
+    return if opponent_move == own_move {
+        DRAW_POINTS
+    }  else if opponent_move_index == (own_move_index + 1) % 3 {
+        LOSE_POINTS
+    } else {
+        WIN_POINTS
+    }
+}
+
 fn calculate_round_part2(round: String) -> i32 {
     let mut round_score = 0;
-    let split: Vec<&str> = round.split(" ").collect();
 
-    let opponent_move = split.get(0).unwrap();
-    let needed_outcome = split.get(1).unwrap();
+    let split: Vec<&str> = round.split(" ").collect();
+    let opponent_move = *CONVERSION_MAP.get(split.get(0).unwrap()).unwrap();
+    let needed_outcome = *split.get(1).unwrap();
 
     let needed_move = calculate_needed_move(needed_outcome, opponent_move);
 
-    round_score += USAGE_SCORE_PART2.get(needed_move).unwrap();
-    round_score += GAME_SCORE_PART2.get(needed_outcome).unwrap();
+    round_score += USAGE_SCORE.get(needed_move).unwrap();
+    round_score += GAME_SCORE.get(needed_outcome).unwrap();
 
     return round_score;
 }
 
 fn calculate_needed_move<'a>(needed_outcome: &'a str, opponent_move: &'a str) -> &'a str {
-    let moves = ["A", "B", "C"];
-    let move_index = moves.iter().position(|&x| x == opponent_move).unwrap();
+    let move_index = MOVES.iter().position(|&x| x == opponent_move).unwrap();
     return if needed_outcome == "Y" {
         opponent_move
     } else if needed_outcome == "Z" {
-        moves[if move_index == 2 { 0 } else { move_index+1 }]
+        MOVES[(move_index + 1) % 3]
     } else {
-        moves[if move_index == 0 { 2 } else { move_index-1 }]
+        MOVES[(move_index + 2) % 3]
     }
 }
 
