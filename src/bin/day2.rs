@@ -1,12 +1,12 @@
+extern crate adventofcode2022;
 extern crate lazy_static;
 
-use std::fs::File;
-use std::io::{BufRead, BufReader, Error};
 use std::collections::HashMap;
 use std::iter::{Iterator};
 use lazy_static::lazy_static;
+use adventofcode2022::util;
 
-const FILE_PATH: &str = "src/input.txt";
+const FILE_PATH: &str = "data/day2_personal.txt";
 
 const LOSE_POINTS: i32 = 0;
 const DRAW_POINTS: i32 = 3;
@@ -48,10 +48,9 @@ lazy_static! {
 }
 
 
-fn main() -> Result<(), Error> {
-    let strategy_guide = read(FILE_PATH)?;
+fn main() {
+    let strategy_guide = util::read_file(FILE_PATH);
     simulate_strategy(strategy_guide);
-    Ok(())
 }
 
 fn simulate_strategy(strategy_guide: Vec<String>) {
@@ -115,11 +114,4 @@ fn calculate_needed_move<'a>(needed_outcome: &'a str, opponent_move: &'a str) ->
     } else {
         MOVES[(move_index + 2) % 3]
     }
-}
-
-fn read(path: &str) -> Result<Vec<String>, Error> {
-    let file = File::open(path)?;
-    let br = BufReader::new(file);
-    let lines: Vec<String> = br.lines().collect::<Result<_, _>>().unwrap();
-    Ok(lines)
 }
