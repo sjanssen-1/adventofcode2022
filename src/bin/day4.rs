@@ -16,14 +16,12 @@ impl CleaningElf {
         }
     }
 
-    fn fully_overlaps(elf1: CleaningElf, elf2: CleaningElf) -> bool {
-        return elf1.start_id <= elf2.start_id && elf1.end_id >= elf2.end_id
-            || elf2.start_id <= elf1.start_id && elf2.end_id >= elf1.end_id;
+    fn fully_overlaps(self, other_elf: CleaningElf) -> bool {
+        self.start_id <= other_elf.start_id && self.end_id >= other_elf.end_id
     }
 
-    fn partially_overlaps(elf1: CleaningElf,  elf2: CleaningElf) -> bool {
-        return elf1.start_id <= elf2.start_id && elf1.end_id >= elf2.start_id
-            || elf2.start_id <= elf1.start_id && elf2.end_id >= elf1.start_id
+    fn partially_overlaps(self, other_elf: CleaningElf) -> bool {
+        self.start_id <= other_elf.start_id && self.end_id >= other_elf.start_id
     }
 }
 
@@ -42,11 +40,11 @@ fn check_assignment_overlaps(assignment_pairs: &Vec<String>) -> (i32, i32) {
         let cleaning_ranges: Vec<&str> = assignment_pair.split(",").collect();
         let elf1 = CleaningElf::new(cleaning_ranges.get(0).unwrap());
         let elf2 = CleaningElf::new(cleaning_ranges.get(1).unwrap());
-        if CleaningElf::fully_overlaps(elf1,  elf2)
+        if elf1.fully_overlaps(elf2) || elf2.fully_overlaps(elf1)
         {
             full_overlaps += 1;
             partial_overlaps += 1;
-        } else if CleaningElf::partially_overlaps(elf1, elf2) {
+        } else if elf1.partially_overlaps(elf2) || elf2.partially_overlaps(elf1) {
             partial_overlaps += 1;
         }
 
