@@ -15,5 +15,9 @@ name = "day3"
 [[bin]]
 name = "day4"
 
+[[bin]]
+name = "day5"
+
 [dependencies]
 lazy_static = "1.4.0"
+anyhow = "1.0.66"
