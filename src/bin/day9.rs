@@ -1,11 +1,8 @@
-extern crate core;
-
 use std::collections::HashSet;
 use std::fs::read_to_string;
-use anyhow::{Error, Result};
+use anyhow::Result;
 
-
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 struct Knot {
     current_position: Position,
     previous_position: Position,
@@ -28,17 +25,17 @@ impl Knot {
     }
 
     fn follow(&mut self, knot: &Knot) {
-        let calculated_move = self.current_position.calculate_follow_move(&knot.current_position);
-        if !calculated_move.is_ok() {
-            return;
+        let delta_x = knot.current_position.x - self.current_position.x;
+        let delta_y = knot.current_position.y - self.current_position.y;
+        if delta_x.abs() > 1 || delta_y.abs() > 1 {
+            self.previous_position.x = self.current_position.x;
+            self.previous_position.y = self.current_position.y;
+            self.current_position.x += delta_x.signum();
+            self.current_position.y += delta_y.signum();
         }
-        self.previous_position.x = self.current_position.x;
-        self.previous_position.y = self.current_position.y;
-        self.current_position.position_move(calculated_move.unwrap());
     }
 }
 
-#[derive(Debug)]
 struct Tail {
     current_position: Position,
     unique_positions: HashSet<Position>,
@@ -51,95 +48,20 @@ impl Tail {
     }
 
     fn follow(&mut self, knot: &Knot) {
-        let calculated_move = self.current_position.calculate_follow_move(&knot.current_position);
-        if !calculated_move.is_ok() {
-            return;
+        let delta_x = knot.current_position.x - self.current_position.x;
+        let delta_y = knot.current_position.y - self.current_position.y;
+        if delta_x.abs() > 1 || delta_y.abs() > 1 {
+            self.current_position.x += delta_x.signum();
+            self.current_position.y += delta_y.signum();
+            self.unique_positions.insert(Position{ x: self.current_position.x, y: self.current_position.y });
         }
-        self.current_position.position_move(calculated_move.unwrap());
-        self.unique_positions.insert(Position{ x: self.current_position.x, y: self.current_position.y });
     }
 }
 
-#[derive(Copy, Clone, Eq, Hash, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, Hash, PartialEq)]
 struct Position {
     x: i16,
     y: i16,
-}
-impl Position {
-    fn calculate_follow_move(&self, position: &Position) -> Result<Direction> {
-        if self.x - position.x == 2 {
-            if self.y == position.y {
-                Ok(Direction::Left)
-            } else if self.y > position.y {
-                Ok(Direction::DownLeft)
-            } else {
-                Ok(Direction::UpLeft)
-            }
-        } else if position.x - self.x == 2 {
-            if self.y == position.y {
-                Ok(Direction::Right)
-            } else if self.y > position.y {
-                Ok(Direction::DownRight)
-            } else {
-                Ok(Direction::UpRight)
-            }
-        } else if self.y - position.y == 2 {
-            if self.x == position.x {
-                Ok(Direction::Down)
-            } else if self.x > position.x {
-                Ok(Direction::DownLeft)
-            } else {
-                Ok(Direction::DownRight)
-            }
-        } else if position.y - self.y == 2 {
-            if self.x == position.x {
-                Ok(Direction::Up)
-            } else if self.x > position.x {
-                Ok(Direction::UpLeft)
-            } else {
-                Ok(Direction::UpRight)
-            }
-        } else {
-            Err(Error::msg("get rekt"))
-        }
-    }
-
-    fn position_move(&mut self, direction: Direction) {
-        match direction {
-            Direction::Left => self.x -= 1,
-            Direction::Right => self.x += 1,
-            Direction::Up => self.y += 1,
-            Direction::Down => self.y -= 1,
-            Direction::UpRight => {
-                self.x += 1;
-                self.y += 1;
-            },
-            Direction::UpLeft => {
-                self.x -= 1;
-                self.y += 1;
-            },
-            Direction::DownRight => {
-                self.x += 1;
-                self.y -= 1;
-            },
-            Direction::DownLeft => {
-                self.x -= 1;
-                self.y -= 1;
-            },
-        }
-    }
-}
-
-#[derive(PartialEq)]
-enum Direction {
-    Left,
-    Right,
-    Up,
-    Down,
-    UpRight,
-    UpLeft,
-    DownRight,
-    DownLeft,
 }
 
 fn main() -> Result<()> {
