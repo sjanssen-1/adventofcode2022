@@ -43,12 +43,12 @@ fn part2() -> Result<()> {
     for instruction in program.lines() {
         if instruction == "noop" {
             cycle_count += 1;
-            unsafe { crt.draw(cycle_count, register_x); }
+            crt.draw(cycle_count, register_x);
         } else if instruction.starts_with("addx") {
             cycle_count += 1;
-            unsafe { crt.draw(cycle_count, register_x); }
+            crt.draw(cycle_count, register_x);
             cycle_count += 1;
-            unsafe { crt.draw(cycle_count, register_x); }
+            crt.draw(cycle_count, register_x);
             let increment = instruction.split_once(" ").unwrap().1.parse::<i16>().unwrap();
             register_x += increment;
         }
