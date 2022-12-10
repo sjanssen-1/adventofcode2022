@@ -3,33 +3,6 @@ name = "adventofcode2022"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "day1"
-
-[[bin]]
-name = "day2"
-
-[[bin]]
-name = "day3"
-
-[[bin]]
-name = "day4"
-
-[[bin]]
-name = "day5"
-
-[[bin]]
-name = "day6"
-
-[[bin]]
-name = "day7"
-
-[[bin]]
-name = "day8"
-
-[[bin]]
-name = "day9"
-
 [dependencies]
 lazy_static = "1.4.0"
 anyhow = "1.0.66"
