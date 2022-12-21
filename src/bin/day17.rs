@@ -9,7 +9,10 @@ fn main() -> Result<()>{
 
     let mut stopped_rocks: i64 = 0;
     let mut stack: Vec<(usize, usize)> = Vec::new();
-    while stopped_rocks != 1000000000000 {
+
+    let mut previous_height = 0;
+    let mut heights: Vec<usize> = Vec::new();
+    while stopped_rocks != 5000 {
 
         // spawn next rock
         // every rock starts with x=2 (2 units from the left edge)
@@ -18,6 +21,9 @@ fn main() -> Result<()>{
         let highest_y = get_highest_y(&stack);
         let y: usize;
         if highest_y.is_some() {
+            heights.push(highest_y.unwrap() - previous_height);
+            previous_height = highest_y.unwrap();
+
             y = highest_y.unwrap() + 4;
         } else {
             y = 3;
@@ -47,7 +53,7 @@ fn main() -> Result<()>{
                     stack.push((*rock_x, *rock_y));
                 }
                 // println!("stored rock at {:?}", rock.coordinates);
-                println!("stopped rocks {}", stopped_rocks);
+                // println!("stopped rocks {}", stopped_rocks);
             }
             else {
                 // println!("moved rock down to {:?}", rock.coordinates);
@@ -56,7 +62,7 @@ fn main() -> Result<()>{
             // continue loop
         }
     }
-    println!("{:?}", stack);
+    println!("{:?}", heights);
     println!("part 1: {}", get_highest_y(&stack).unwrap() + 1);
     Ok(())
 }
@@ -269,6 +275,11 @@ mod tests {
         stack.push((0,7));
         stack.push((4,5));
 
-        assert_eq!(get_highest_y(&stack), 7);
+        let mut stack2: Vec<(usize, usize)> = Vec::new();
+        stack2.push((3,6));
+
+        assert_eq!(get_highest_y(&stack).unwrap(), 7);
+
+        assert!(matches!(stack, stack2));
     }
 }
