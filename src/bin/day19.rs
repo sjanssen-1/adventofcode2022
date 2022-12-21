@@ -11,8 +11,8 @@ fn main() -> Result<()>{
     }
     println!("{:?}", blueprints);
 
-    // part1(&blueprints);
-    part2(&blueprints);
+    part1(&blueprints);
+    // part2(&blueprints);
 
     Ok(())
 }
@@ -21,7 +21,7 @@ fn part1(blueprints: &Vec<Blueprint>) {
     let mut sum = 0;
     for (idx, blueprint) in blueprints.iter().enumerate() {
         let mut cache: HashMap<State, u32> = HashMap::new();
-        let result = dfs(State{
+        let result = dfs2(State{
             ore: 0,
             clay: 0,
             obsidian: 0,
@@ -46,7 +46,7 @@ fn part2(blueprints: &Vec<Blueprint>) {
     let mut product = 1;
     for blueprint in &blueprints[..=1] {
         let mut cache: HashMap<State, u32> = HashMap::new();
-        let result = dfs(State{
+        let result = dfs2(State{
             ore: 0,
             clay: 0,
             obsidian: 0,
@@ -139,11 +139,131 @@ fn dfs(state: State, blueprint: &Blueprint, cache: &mut HashMap<State, u32>) -> 
         best = best.max(path_result);
     }
 
-    // do nothing path
-    let new_state = new_state.clone();
-    let path_result = dfs(new_state.clone(), blueprint, cache);
-    cache.insert(new_state.clone(), path_result);
-    best = best.max(path_result);
+    if !(can_create_ore_bot && can_create_clay_bot && can_create_obsidian_bot && can_create_geode_bot) {
+        // do nothing path
+        let new_state = new_state.clone();
+        let path_result = dfs(new_state.clone(), blueprint, cache);
+        cache.insert(new_state.clone(), path_result);
+        best = best.max(path_result);
+    }
+
+
+    best
+}
+
+
+fn dfs2(state: State, blueprint: &Blueprint, cache: &mut HashMap<State, u32>) -> u32 {
+    if state.minutes == 0 {
+        return state.geode;
+    }
+    if cache.contains_key(&state) {
+        return *cache.get(&state).unwrap();
+    }
+
+    let should_create_obsidian_bot = state.obsidian_bots < blueprint.obsidian_rate;
+    let should_create_clay_bot = state.clay_bots < blueprint.clay_rate;
+    let should_create_ore_bot = state.ore_bots < blueprint.ore_rate;
+
+    let og_state = State{
+        ore: state.ore + state.ore_bots + state.ore_bots_in_prod,
+        clay: state.clay + state.clay_bots + state.clay_bots_in_prod,
+        obsidian: state.obsidian + state.obsidian_bots + state.obsidian_bots_in_prod,
+        geode: state.geode + state.geode_bots + state.geode_bots_in_prod,
+        ore_bots: state.ore_bots + state.ore_bots_in_prod,
+        clay_bots: state.clay_bots + state.clay_bots_in_prod,
+        obsidian_bots: state.obsidian_bots + state.obsidian_bots_in_prod,
+        geode_bots: state.geode_bots + state.geode_bots_in_prod,
+        ore_bots_in_prod: 0,
+        clay_bots_in_prod: 0,
+        obsidian_bots_in_prod: 0,
+        geode_bots_in_prod: 0,
+        minutes: state.minutes,
+    };
+
+    let mut best = og_state.geode;
+
+    if og_state.obsidian_bots != 0 {
+        // skip to next geode bot creation
+        let minutes_for_ore = if state.ore >= blueprint.geode_cost.0 { 1 } else { blueprint.geode_cost.0 / og_state.ore_bots };
+        let minutes_for_obsidian = if state.obsidian >= blueprint.geode_cost.1 { 1 } else { blueprint.geode_cost.1 / og_state.obsidian_bots };
+        let max_minutes = minutes_for_ore.max(minutes_for_obsidian);
+        if max_minutes as usize > og_state.minutes {
+            best += og_state.minutes as u32 * og_state.geode_bots;
+        } else {
+            let mut new_state = og_state.clone();
+            new_state.geode_bots_in_prod = 1;
+            new_state.ore = og_state.ore + (og_state.ore_bots * max_minutes) - blueprint.geode_cost.0;
+            new_state.clay = og_state.clay + (og_state.clay_bots * max_minutes);
+            new_state.obsidian = og_state.obsidian + (og_state.obsidian_bots * max_minutes) - blueprint.geode_cost.1;
+            new_state.geode = og_state.geode + (og_state.geode_bots * max_minutes);
+            new_state.minutes -= max_minutes as usize;
+            let path_result = dfs2(new_state.clone(), blueprint, cache);
+            cache.insert(new_state.clone(), path_result);
+            best = best.max(path_result);
+        }
+    }
+
+    // skip to next obsidian bot creation if we should
+    if should_create_obsidian_bot && og_state.clay_bots != 0 {
+        let minutes_for_ore = if state.ore >= blueprint.obsidian_cost.0 { 1 } else { blueprint.obsidian_cost.0 / og_state.ore_bots };
+        let minutes_for_clay = if state.clay >= blueprint.obsidian_cost.1 { 1 } else { blueprint.obsidian_cost.1 / og_state.clay_bots };
+        let max_minutes = minutes_for_ore.max(minutes_for_clay);
+        if max_minutes as usize > og_state.minutes {
+            best += og_state.minutes as u32 * og_state.geode_bots;
+        } else {
+            let mut new_state = og_state.clone();
+            new_state.obsidian_bots_in_prod = 1;
+            new_state.ore = og_state.ore + (og_state.ore_bots * max_minutes) - blueprint.obsidian_cost.0;
+            new_state.clay = og_state.clay + (og_state.clay_bots * max_minutes) - blueprint.obsidian_cost.1;
+            new_state.obsidian = og_state.obsidian + (og_state.obsidian_bots * max_minutes);
+            new_state.geode = og_state.geode + (og_state.geode_bots * max_minutes);
+            new_state.minutes -= max_minutes as usize;
+            let path_result = dfs2(new_state.clone(), blueprint, cache);
+            cache.insert(new_state.clone(), path_result);
+            best = best.max(path_result);
+        }
+    }
+
+    // skip to next clay bot creation if we should
+    if should_create_clay_bot {
+        let minutes_for_ore = if state.ore >= blueprint.clay_cost { 1 } else { blueprint.clay_cost / og_state.ore_bots };
+
+        if minutes_for_ore as usize > og_state.minutes {
+            best += og_state.minutes as u32 * og_state.geode_bots;
+        } else {
+            let mut new_state = og_state.clone();
+            new_state.clay_bots_in_prod = 1;
+            new_state.ore = og_state.ore + (og_state.ore_bots * minutes_for_ore) - blueprint.clay_cost;
+            new_state.clay = og_state.clay + (og_state.clay_bots * minutes_for_ore);
+            new_state.obsidian = og_state.obsidian + (og_state.obsidian_bots * minutes_for_ore);
+            new_state.geode = og_state.geode + (og_state.geode_bots * minutes_for_ore);
+            new_state.minutes -= minutes_for_ore as usize;
+            let path_result = dfs2(new_state.clone(), blueprint, cache);
+            cache.insert(new_state.clone(), path_result);
+            best = best.max(path_result);
+        }
+    }
+
+    // skip to next ore bot creation if we should
+    if should_create_ore_bot {
+        let minutes_for_ore = if state.ore >= blueprint.ore_cost { 1 } else { blueprint.ore_cost / og_state.ore_bots };
+
+        if minutes_for_ore as usize > og_state.minutes {
+            best += og_state.minutes as u32 * og_state.geode_bots;
+        } else {
+            let mut new_state = og_state.clone();
+            new_state.ore_bots_in_prod = 1;
+            new_state.ore = og_state.ore + (og_state.ore_bots * minutes_for_ore) - blueprint.ore_cost;
+            new_state.clay = og_state.clay + (og_state.clay_bots * minutes_for_ore);
+            new_state.obsidian = og_state.obsidian + (og_state.obsidian_bots * minutes_for_ore);
+            new_state.geode = og_state.geode + (og_state.geode_bots * minutes_for_ore);
+            new_state.minutes -= minutes_for_ore as usize;
+            let path_result = dfs2(new_state.clone(), blueprint, cache);
+            cache.insert(new_state.clone(), path_result);
+            best = best.max(path_result);
+        }
+
+    }
 
     best
 }
