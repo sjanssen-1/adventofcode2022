@@ -12,7 +12,7 @@ fn main() -> Result<()>{
 
     let mut previous_height = 0;
     let mut heights: Vec<usize> = Vec::new();
-    while stopped_rocks != 5000 {
+    while stopped_rocks != 2022 {
 
         // spawn next rock
         // every rock starts with x=2 (2 units from the left edge)
@@ -62,6 +62,18 @@ fn main() -> Result<()>{
             // continue loop
         }
     }
+
+    for y in (0..50).rev() {
+        for x in 0..7 {
+            if stack.contains(&(x as usize, y as usize)) {
+                print!("#");
+            } else {
+                print!(".");
+            }
+        }
+        print!("\r\n");
+    }
+
     println!("{:?}", heights);
     println!("part 1: {}", get_highest_y(&stack).unwrap() + 1);
     Ok(())
@@ -172,6 +184,7 @@ impl Rock {
                 coordinates.push((4, y+1)); // right leg
                 coordinates.push((3, y+2)); // top leg
                 coordinates.push((3, y)); // down leg
+                coordinates.push((3, y+1));
                 // center can't hit
             }
             RockShape::EL => {
